@@ -1,5 +1,6 @@
 using InstExpander.BusinessLogic;
 using InstExpander.BusinessLogic.Interfaces;
+using InstExpanderFunctions.FollowersWorker;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,6 +11,7 @@ var host = new HostBuilder()
     {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
+        services.AddScoped<FunctionConfiguration>();
         services.AddInstagramWorker();
     })
     .Build();

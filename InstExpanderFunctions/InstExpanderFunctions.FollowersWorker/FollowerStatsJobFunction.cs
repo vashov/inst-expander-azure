@@ -10,12 +10,12 @@ namespace InstExpanderFunctions.FollowersWorker
     {
         private readonly ILogger logger;
         private readonly InstagramWorker instagramWorker;
-        private readonly IConfiguration configuration;
+        private readonly FunctionConfiguration configuration;
 
         public FollowerStatsJobFunction(
             ILoggerFactory loggerFactory,
             InstagramWorker instagramWorker,
-            IConfiguration configuration)
+            FunctionConfiguration configuration)
         {
             this.logger = loggerFactory.CreateLogger<FollowerStatsJobFunction>();
             this.instagramWorker = instagramWorker;
@@ -32,16 +32,43 @@ namespace InstExpanderFunctions.FollowersWorker
                 logger.LogInformation("Next timer schedule at: {date}", myTimer.ScheduleStatus.Next.ToUniversalTime());
             }
 
-            try
-            {
-                await instagramWorker.StartJob();
-            }
-            catch (CancellationException e)
-            {
-                logger.LogWarning("InstagramWorker Job was cancelled: {reason}", e.Message);
-            }
+            await StartJob("InstagramWorker", instagramWorker.StartJob);
 
             logger.LogInformation("FollowerStatsJobFunction finished at: {date}", DateTime.UtcNow);
+        }
+
+        private async Task StartJob(string jobName, Func<Task> job)
+        {
+            int countToRunJob = 1;
+            bool isChallengeRequiredExceptionCatched = false;
+            while (countToRunJob-- > 0)
+            {
+                try
+                {
+                    await job();
+                }
+                catch (ChallengeRequiredException e)
+                {
+                    if (isChallengeRequiredExceptionCatched)
+                    {
+                        logger.LogWarning("{JobName} Job was cancelled: {reason}", jobName, e.Message);
+                    }
+                    else
+                    {
+                        isChallengeRequiredExceptionCatched = true;
+
+                        // Let's try again, maybe the Challenge was passed by a human.
+                        countToRunJob++;
+                        double delayMin = configuration.ChallengeRequiredDelayMin;
+                        logger.LogWarning("{JobName} Job await {min} min to challenge be passed: {reason}", jobName, delayMin, e.Message);
+                        await Task.Delay(TimeSpan.FromMinutes(delayMin));
+                    }
+                }
+                catch (CancellationException e)
+                {
+                    logger.LogWarning("{JobName} Job was cancelled: {reason}", jobName, e.Message);
+                }
+            }
         }
     }
 }
