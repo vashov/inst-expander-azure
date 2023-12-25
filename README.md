@@ -4,6 +4,7 @@
     Azure:StorageBlobContainerName
     InstagramSettings:Username
     InstagramSettings:Password
+    InstagramSettings:BotId
     InstagramSettings:StateFileName - "state.bin"
     FollowerStatsJobFunctionTimeTriggerCron - "0 30 15 * * *"
 
