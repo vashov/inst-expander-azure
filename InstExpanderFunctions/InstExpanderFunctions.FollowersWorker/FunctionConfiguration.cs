@@ -1,15 +1,31 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using InstExpander.BusinessLogic.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace InstExpanderFunctions.FollowersWorker
 {
-    public class FunctionConfiguration
+    public class FunctionConfiguration : ConfigurationService
     {
-        public double ChallengeRequiredDelayMin { get; private set; }
+        public string FollowerStatsJobFunctionTimeTriggerCron { get; private set; }
 
-        public FunctionConfiguration(IConfiguration config) 
+        public FunctionConfiguration(IConfiguration config) : base(config)
         {
-            string challengeRequiredDelayMinString = config["FunctionSettings:ChallengeRequiredDelayMin"];
-            ChallengeRequiredDelayMin = string.IsNullOrWhiteSpace(challengeRequiredDelayMinString) ? 5 : double.Parse(challengeRequiredDelayMinString);
+        }
+
+        protected override List<string> GetConfigurationErrors()
+        {
+            List<string> errors = base.GetConfigurationErrors();
+
+            if (string.IsNullOrWhiteSpace(FollowerStatsJobFunctionTimeTriggerCron))
+                errors.Add("FollowerStatsJobFunctionTimeTriggerCron is not defined in configuration");
+
+            return errors;
+        }
+
+        protected override void Init(IConfiguration config)
+        {
+            base.Init(config);
+
+            FollowerStatsJobFunctionTimeTriggerCron = config["FollowerStatsJobFunctionTimeTriggerCron"];
         }
     }
 }
