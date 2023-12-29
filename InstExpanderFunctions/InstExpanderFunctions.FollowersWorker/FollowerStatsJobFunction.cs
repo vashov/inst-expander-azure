@@ -1,4 +1,6 @@
 using InstExpander.BusinessLogic;
+using InstExpander.BusinessLogic.Exceptions;
+using InstExpander.BusinessLogic.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
@@ -6,18 +8,27 @@ namespace InstExpanderFunctions.FollowersWorker
 {
     public class FollowerStatsJobFunction
     {
-        private readonly ILogger logger;
+        private readonly ILogger<FollowerStatsJobFunction> logger;
+        private readonly IInstaApiAuthorizer instaApiAuthorizer;
+        private readonly IFileStorage fileStorage;
+        private readonly FunctionConfiguration configuration;
         private readonly InstagramWorker instagramWorker;
 
         public FollowerStatsJobFunction(
             ILoggerFactory loggerFactory,
+            IInstaApiAuthorizer instaApiAuthorizer,
+            IFileStorage fileStorage,
+            FunctionConfiguration configuration,
             InstagramWorker instagramWorker)
         {
             this.logger = loggerFactory.CreateLogger<FollowerStatsJobFunction>();
+            this.instaApiAuthorizer = instaApiAuthorizer;
+            this.fileStorage = fileStorage;
+            this.configuration = configuration;
             this.instagramWorker = instagramWorker;
         }
 
-        [FixedDelayRetry(-1, "00:05:00")]
+        [ExponentialBackoffRetry(-1, "00:10:00", "00:30:00")]
         [Function("FollowerStatsJobFunction")]
         public async Task Run([TimerTrigger("%FollowerStatsJobFunctionTimeTriggerCron%")] TimerInfo timer)
         {
@@ -28,7 +39,17 @@ namespace InstExpanderFunctions.FollowersWorker
                 logger.LogInformation("Next timer schedule at: {date}", timer.ScheduleStatus.Next.ToUniversalTime());
             }
 
-            await instagramWorker.StartJob();
+            try
+            {
+                await instaApiAuthorizer.Authorize();
+                await instagramWorker.StartJob();
+            }
+            catch (WaitBeforeTryAgainException)
+            {
+                // Delete instagram auth file to login again in next time.
+                await fileStorage.DeleteIfExist(configuration.InstagramStateFileName);
+                throw;
+            }
 
             logger.LogInformation("FollowerStatsJobFunction finished at: {date}", DateTime.UtcNow);
         }
