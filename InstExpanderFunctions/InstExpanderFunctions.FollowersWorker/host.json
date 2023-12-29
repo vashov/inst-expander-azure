@@ -8,6 +8,9 @@
                 "excludedTypes": "Request"
             },
             "enableLiveMetricsFilters": true
+        },
+        "logLevel": {
+            "Function": "Information"
         }
     }
 }
