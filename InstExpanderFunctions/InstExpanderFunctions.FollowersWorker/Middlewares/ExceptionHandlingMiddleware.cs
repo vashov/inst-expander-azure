@@ -28,20 +28,38 @@ namespace InstExpanderFunctions.FollowersWorker.Middlewares
             {
                 await next(context);
             }
-            catch (ChallengeRequiredException)
+            // All exceptions caught in middleware are AggregateException
+            //https://github.com/Azure/azure-functions-dotnet-worker/issues/993
+            catch (AggregateException ex)
             {
-                // Fail function execution to retry execution later.
-                throw;
-            }
-            catch (CancellationException ex)
-            {
-                logger.LogWarning("Operation was cancelled: {reason}", ex.Message);
-            }
-            catch (ConfigurationErrorsException ex)
-            {
-                logger.LogError(ex.Message);
-                if (!await WriteErrorResponse(context))
-                    throw;
+                var specEx = GetSpecificException(ex);
+                if (specEx is ChallengeRequiredException challengeEx)
+                {
+                    // Fail function execution to retry execution later.
+                    throw challengeEx; // Clear stack trace of exception.
+                }
+                else if (specEx is WaitBeforeTryAgainException waitEx)
+                {
+                    // Fail function execution to retry execution later.
+                    throw waitEx; // Clear stack trace of exception.
+                }
+                else if (specEx is CancellationException)
+                {
+                    logger.LogWarning("Operation was cancelled: {reason}", ex.Message);
+                    return;
+                }
+                else if (specEx is ConfigurationErrorsException configEx)
+                {
+                    logger.LogError(configEx.Message);
+                    if (!await WriteErrorResponse(context))
+                        throw configEx; // Clear stack trace of exception.
+                }
+                else
+                {
+                    logger.LogError(ex, "Error processing invocation");
+                    if (!await WriteErrorResponse(context))
+                        throw;
+                }
             }
             catch (Exception ex)
             {
@@ -49,6 +67,12 @@ namespace InstExpanderFunctions.FollowersWorker.Middlewares
                 if (!await WriteErrorResponse(context))
                     throw;
             }
+        }
+
+        private static Exception GetSpecificException(AggregateException exception)
+        {
+            var e = exception.InnerExceptions.FirstOrDefault();
+            return e ?? exception;
         }
 
         private async Task<bool> WriteErrorResponse(FunctionContext context)
