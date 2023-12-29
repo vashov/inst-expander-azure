@@ -8,6 +8,7 @@ param location string = resourceGroup().location
 @maxLength(20)
 param prefix string
 param functionAppSettings array
+param emailsOnChallengeRequired array
 
 var storageAccountForFilesName = '${prefix}sa'
 var cosmodDbAccountName = '${prefix}ca'
@@ -36,6 +37,16 @@ module cosmosModule 'templates/cosmosdb-template.bicep' = {
   }
 }
 
+module appInsightsModule 'templates/appinsights-template.bicep' = {
+  name: '${prefix}-appinsightsModule-deploy'
+  params: {
+    prefix: prefix
+    location: location
+    tagValues: tagValues
+    emailsOnChallengeRequired: emailsOnChallengeRequired
+  }
+}
+
 module functionappModule 'templates/functionapp-template.bicep' = {
   name: '${prefix}-functionappModule-deploy'
   params: {
@@ -46,8 +57,7 @@ module functionappModule 'templates/functionapp-template.bicep' = {
     storageAccountForFilesConnectionString: storageAccountModule.outputs.storageAccountValues.connectionString
     storageAccountForFilesContainerName: storageAccountModule.outputs.storageAccountValues.containerName
     cosmosDbAccountConnectionString: cosmosModule.outputs.cosmosDbConnectionString
+    appInsightsConnectionString: appInsightsModule.outputs.appInsights.connectionString
+    appInsightsInstrumentationKey:appInsightsModule.outputs.appInsights.instrumentationKey
   }
-  dependsOn: [
-
-  ]
 }

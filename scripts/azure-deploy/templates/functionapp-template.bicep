@@ -7,6 +7,8 @@ param functionAppSettings array
 param storageAccountForFilesConnectionString string
 param storageAccountForFilesContainerName string
 param cosmosDbAccountConnectionString string
+param appInsightsInstrumentationKey string
+param appInsightsConnectionString string
 
 var serverfarmsAppServicePlanName = '${functionAppName}asp'
 var storageAccountForFunctionAppName = '${functionAppName}sa'
@@ -100,6 +102,14 @@ resource siteFunctionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED'
           value: '1'
+        }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: appInsightsInstrumentationKey
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsightsConnectionString
         }
         {
           name: 'Azure:CosmosDbConnectionString'

@@ -6,6 +6,11 @@
         "location": "southeastasia",
         "allowToUseExisted": true
     },
+    "appInsightsConfig": {
+        "emailsOnChallengeRequired": [
+            "example@gmail.com"
+        ]
+    },
     "functionAppConfig": {
         "appSettings": [
             {

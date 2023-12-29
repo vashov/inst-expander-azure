@@ -14,6 +14,7 @@ $allowToUseExistedRg = $deployConfig.resourceGroupConfig.allowToUseExisted
 $functionAppSettings = $deployConfig.functionAppConfig.appSettings
 $deployName = "$prefix-deploy"
 $templateFile = $deployConfig.armTemplateFileName
+$emailsOnChallengeRequired = $deployConfig.appInsightsConfig.emailsOnChallengeRequired
 
 # https://stackoverflow.com/questions/72061789/passing-an-array-of-objects-to-a-bicep-template-with-new-azresourcegroupdeployme
 # https://stackoverflow.com/questions/3740128/pscustomobject-to-hashtable
@@ -47,3 +48,4 @@ New-AzResourceGroupDeployment `
     -location $location `
     -env $env `
     -functionAppSettings $functionAppSettingsInBicepFormat `
+    -emailsOnChallengeRequired $emailsOnChallengeRequired
