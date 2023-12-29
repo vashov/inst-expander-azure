@@ -1,0 +1,58 @@
+{
+    "projectName": "project01",
+    "env": "dev",
+    "armTemplateFileName": "main.bicep",
+    "resourceGroupConfig": {
+        "location": "southeastasia",
+        "allowToUseExisted": true
+    },
+    "appInsightsConfig": {
+        "emailsOnChallengeRequired": [
+            "example@gmail.com"
+        ]
+    },
+    "functionAppConfig": {
+        "appSettings": [
+            {
+                "name": "FollowerStatsJobFunctionTimeTriggerCron",
+                "value": "0 30 10 * * *"
+            },
+            {
+                "name": "InstagramSettings:Username",
+                "value": ""
+            },
+            {
+                "name": "InstagramSettings:Password",
+                "value": ""
+            },
+            {
+                "name": "InstagramSettings:BotId",
+                "value": ""
+            },
+            {
+                "name": "InstagramSettings:StateFileName",
+                "value": "state.bin"
+            },
+            {
+                "name": "ProcessSettings:NewOrderDaysDelay",
+                "value": "0.5"
+            },
+            {
+                "name": "TestSettings:TestUsernames",
+                "value": ""
+            },
+            {
+                "name": "InstagramSettings:InstagramRequiredOrdersCountForProcessing",
+                "value": "7"
+            },
+            {
+                "name": "InstagramSettings:InstagramOrdersCountToTakeFollowings",
+                "value": "3"
+            },
+            {
+                "name": "InstagramSettings:FollowersRequestCount",
+                "value": "1"
+            }
+        ]
+    }
+}
