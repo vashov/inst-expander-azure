@@ -1,43 +1,42 @@
+﻿using Functions.Worker.ContextAccessor;
 using InstExpander.BusinessLogic;
 using InstExpander.BusinessLogic.Exceptions;
 using InstExpander.BusinessLogic.Interfaces;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-namespace InstExpanderFunctions.FollowersWorker
+namespace InstExpanderFunctions.FollowersWorker.Jobs
 {
-    public class FollowerStatsJobFunction
+    public class FollowerStatsJob
     {
-        private readonly ILogger<FollowerStatsJobFunction> logger;
+        private readonly ILogger<FollowerStatsJob> logger;
+        private readonly IFunctionContextAccessor context;
         private readonly IInstaApiAuthorizer instaApiAuthorizer;
         private readonly IFileStorage fileStorage;
         private readonly FunctionConfiguration configuration;
         private readonly InstagramWorker instagramWorker;
 
-        public FollowerStatsJobFunction(
+        public FollowerStatsJob(
             ILoggerFactory loggerFactory,
+            IFunctionContextAccessor context,
             IInstaApiAuthorizer instaApiAuthorizer,
             IFileStorage fileStorage,
             FunctionConfiguration configuration,
-            InstagramWorker instagramWorker)
+            InstagramWorker instagramWorker
+            )
         {
-            this.logger = loggerFactory.CreateLogger<FollowerStatsJobFunction>();
+            logger = loggerFactory.CreateLogger<FollowerStatsJob>();
+            this.context = context;
             this.instaApiAuthorizer = instaApiAuthorizer;
             this.fileStorage = fileStorage;
             this.configuration = configuration;
             this.instagramWorker = instagramWorker;
         }
 
-        [ExponentialBackoffRetry(-1, "00:10:00", "00:30:00")]
-        [Function("FollowerStatsJobFunction")]
-        public async Task Run([TimerTrigger("%FollowerStatsJobFunctionTimeTriggerCron%")] TimerInfo timer)
+        public async Task Start()
         {
-            logger.LogInformation("FollowerStatsJobFunction start execution at: {date}", DateTime.UtcNow);
+            string functionName = context.FunctionContext.FunctionDefinition.Name;
 
-            if (timer.ScheduleStatus is not null)
-            {
-                logger.LogInformation("Next timer schedule at: {date}", timer.ScheduleStatus.Next.ToUniversalTime());
-            }
+            logger.LogInformation("FollowerStatsJob {Function} start execution at: {Date}", functionName, DateTime.UtcNow);
 
             try
             {
@@ -51,7 +50,7 @@ namespace InstExpanderFunctions.FollowersWorker
                 throw;
             }
 
-            logger.LogInformation("FollowerStatsJobFunction finished at: {date}", DateTime.UtcNow);
+            logger.LogInformation("FollowerStatsJob {Function} finished at: {Date}", functionName, DateTime.UtcNow);
         }
     }
 }
