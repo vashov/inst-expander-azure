@@ -36,12 +36,14 @@ namespace InstExpanderFunctions.FollowersWorker.Middlewares
                 if (specEx is ChallengeRequiredException challengeEx)
                 {
                     // Fail function execution to retry execution later.
-                    throw challengeEx; // Clear stack trace of exception.
+                    if (!await WriteErrorResponse(context, challengeEx.Message))
+                        throw;
                 }
                 else if (specEx is WaitBeforeTryAgainException waitEx)
                 {
                     // Fail function execution to retry execution later.
-                    throw waitEx; // Clear stack trace of exception.
+                    if (!await WriteErrorResponse(context, waitEx.Message))
+                        throw;
                 }
                 else if (specEx is CancellationException)
                 {
@@ -51,8 +53,8 @@ namespace InstExpanderFunctions.FollowersWorker.Middlewares
                 else if (specEx is ConfigurationErrorsException configEx)
                 {
                     logger.LogError(configEx.Message);
-                    if (!await WriteErrorResponse(context))
-                        throw configEx; // Clear stack trace of exception.
+                    if (!await WriteErrorResponse(context, "Wrong configuration"))
+                        throw;
                 }
                 else
                 {
@@ -75,7 +77,7 @@ namespace InstExpanderFunctions.FollowersWorker.Middlewares
             return e ?? exception;
         }
 
-        private async Task<bool> WriteErrorResponse(FunctionContext context)
+        private async Task<bool> WriteErrorResponse(FunctionContext context, string reason = "Invocation failed!")
         {
             var httpReqData = await context.GetHttpRequestDataAsync();
             if (httpReqData != null)
@@ -84,7 +86,7 @@ namespace InstExpanderFunctions.FollowersWorker.Middlewares
                 var newHttpResponse = httpReqData.CreateResponse(HttpStatusCode.InternalServerError);
                 // You need to explicitly pass the status code in WriteAsJsonAsync method.
                 // https://github.com/Azure/azure-functions-dotnet-worker/issues/776
-                await newHttpResponse.WriteAsJsonAsync(new { FooStatus = "Invocation failed!" }, newHttpResponse.StatusCode);
+                await newHttpResponse.WriteAsJsonAsync(new { Reason = reason }, newHttpResponse.StatusCode);
 
                 var invocationResult = context.GetInvocationResult();
 
